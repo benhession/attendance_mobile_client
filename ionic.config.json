@@ -1,0 +1,7 @@
+{
+  "name": "attendance_mobile_client",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}
