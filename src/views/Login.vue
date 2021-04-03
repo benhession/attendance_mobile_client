@@ -13,19 +13,19 @@
       </ion-header>
 
 
-        <ion-list>
-          <ion-item>
-            <ion-label color="primary" position="floating">Username</ion-label>
-            <ion-input v-model="username" />
-          </ion-item>
+      <ion-list>
+        <ion-item>
+          <ion-label color="primary" position="floating">Username</ion-label>
+          <ion-input v-model="username"/>
+        </ion-item>
 
-          <ion-item>
-            <ion-label color="primary" position="floating">Password</ion-label>
-            <ion-input v-model="password" type="password" />
-          </ion-item>
-        </ion-list>
+        <ion-item>
+          <ion-label color="primary" position="floating">Password</ion-label>
+          <ion-input v-model="password" type="password"/>
+        </ion-item>
+      </ion-list>
 
-      <ion-button @click="logInput()">Login</ion-button>
+      <ion-button @click="logIn()">Login</ion-button>
 
     </ion-content>
   </ion-page>
@@ -33,36 +33,54 @@
 
 <script lang="ts">
 import {
-  IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonList, IonInput, IonLabel
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonPage,
+  IonTitle,
+  IonToolbar
 } from "@ionic/vue";
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useStore, ACTIONS } from '@/store'
+import {ref} from 'vue';
+
+import {ACTIONS, useStore} from '@/store'
+import {useRouter} from "vue-router";
 
 export default {
-  // name: "Login",
+  name: "Login",
   components: {
     IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButton, IonItem, IonList, IonInput, IonLabel
   },
   setup() {
-    const router = useRouter();
+    const router = useRouter()
     const store = useStore();
 
     const username = ref("");
     const password = ref("");
 
-    function logInput() {
-      console.log("Username:", username.value, "password:", password.value);
+    const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn
+    loggedInPromise.then((loggedIn) => {
+      if (loggedIn) {
+        router.push({name: 'tab1'})
+      }
+    });
 
-      store.dispatch(ACTIONS.LOG_IN).then( () => {
-        console.log(store.getters.getLoggedIn);
-        router.push({name: 'tab1'})}
-      ).catch((error) => console.log(error));
+    function logIn() {
+      store.dispatch(ACTIONS.LOG_IN, [username.value, password.value])
+          .then(() => {
+            console.log(store.getters.getLoggedIn);
+            router.push({name: 'tab1'})
+          })
+          .catch((error) => console.log(error));
     }
 
-    return {router, store, username, password, logInput};
+    return {router, store, username, password, logIn};
   }
-};
+}
+;
 
 </script>
 
