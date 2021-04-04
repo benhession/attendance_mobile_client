@@ -1,8 +1,8 @@
 import {InjectionKey} from 'vue';
-import {ActionTree, createStore, GetterTree, MutationTree, Store, useStore as baseUseStore} from 'vuex';
+import {ActionContext, ActionTree, createStore, GetterTree, MutationTree, Store, useStore as baseUseStore} from 'vuex';
 import authService, {KeyCloakTokens} from "@/services/authService";
-import {UserDefaults} from "@/services/UserDefaults";
-// import { Keychain } from "@ionic-native/keychain";
+import {UserDefaults} from "@/store/UserDefaults";
+import { Keychain } from "@ionic-native/keychain";
 
 const userDefaults = UserDefaults.getInstance();
 
@@ -10,21 +10,22 @@ const enum USER_DEFAULTS {
     LOGGED_IN = 'LOGGED_IN'
 }
 
+const enum KEYCHAIN {
+    REFRESH_TOKEN = 'REFRESH_TOKEN',
+    REFRESH_EXPIRY = 'REFRESH_EXPIRY'
+}
+
 export interface State {
     loggedIn: boolean;
     accessToken: string;
-    refreshToken: string;
     accessTokenExpiry: Date | null;
-    refreshTokenExpiry: Date | null;
 }
 
 export const key: InjectionKey<Store<State>> = Symbol();
 const state: State = {
     loggedIn: false,
     accessToken: "",
-    refreshToken: "",
     accessTokenExpiry: null,
-    refreshTokenExpiry: null
 }
 
 // enum for auto-completion
@@ -32,9 +33,7 @@ export const enum MUTATIONS {
     SET_LOGGED_IN = 'SET_LOGGED_IN',
     SET_ACCESS_TOKEN = 'SET_ACCESS_TOKEN',
     SET_ACCESS_EXPIRY = 'SET_ACCESS_EXPIRY',
-    SET_REFRESH_TOKEN = 'SET_REFRESH_TOKEN',
-    SET_REFRESH_EXPIRY = 'SET_REFRESH_EXPIRY',
-    CLEAR_TOKENS = 'CLEAR_TOKENS'
+    CLEAR_ACCESS_TOKEN = 'CLEAR_TOKENS'
 }
 
 const mutations: MutationTree<State> = {
@@ -44,18 +43,10 @@ const mutations: MutationTree<State> = {
     [MUTATIONS.SET_ACCESS_TOKEN](state, tokenString: string) {
         state.accessToken = tokenString;
     },
-    [MUTATIONS.SET_REFRESH_TOKEN](state, tokenString: string) {
-        state.refreshToken = tokenString;
-    },
-    [MUTATIONS.SET_REFRESH_EXPIRY](state, dateTime: Date) {
-        state.refreshTokenExpiry = dateTime;
-    },
     [MUTATIONS.SET_ACCESS_EXPIRY](state, dateTime: Date) {
         state.accessTokenExpiry = dateTime;
     },
-    [MUTATIONS.CLEAR_TOKENS](state) {
-        state.refreshToken = "";
-        state.refreshTokenExpiry = null;
+    [MUTATIONS.CLEAR_ACCESS_TOKEN](state) {
         state.accessToken = "";
         state.accessTokenExpiry = null;
     }
@@ -65,12 +56,29 @@ export const enum ACTIONS {
     LOG_IN = 'LOG_IN',
     FETCH_TOKENS_PWD_GRANT = 'FETCH_TOKENS_PWD_GRANT',
     LOG_OUT = 'LOG_OUT',
-    // TODO: save refresh token to keychain
-    SAVE_REFRESH_TO_KEYCHAIN = 'SAVE_REFRESH_TO_KEYCHAIN'
+    FETCH_TOKENS_REFRESH_GRANT = 'FETCH_TOKENS_REFRESH_GRANT'
+}
+
+// actions helper function
+function updateTokens(state: ActionContext<State, any>, data: KeyCloakTokens): Promise<void> {
+
+    const accessExpiry: Date = new Date();
+    accessExpiry.setSeconds(accessExpiry.getSeconds() + data.expires_in);
+
+    const refreshExpiry: Date = new Date();
+    refreshExpiry.setSeconds(refreshExpiry.getSeconds() + data.refresh_expires_in);
+
+    state.commit(MUTATIONS.SET_ACCESS_TOKEN, data.access_token);
+    state.commit(MUTATIONS.SET_ACCESS_EXPIRY, accessExpiry);
+
+    Keychain.setJson(KEYCHAIN.REFRESH_TOKEN, data.refresh_token, false)
+        .catch(e => console.error(e));
+    return Keychain.setJson(KEYCHAIN.REFRESH_EXPIRY, refreshExpiry.toISOString(), false);
+
 }
 
 const actions: ActionTree<State, any> = {
-    [ACTIONS.LOG_IN](state, [username, password]) {
+    [ACTIONS.LOG_IN](state, [username, password]): Promise<void> {
         return new Promise((resolve, reject) => {
             state.dispatch(ACTIONS.FETCH_TOKENS_PWD_GRANT, [username, password])
                 .then(() => {
@@ -86,18 +94,21 @@ const actions: ActionTree<State, any> = {
         });
     },
 
-    [ACTIONS.LOG_OUT](state) {
+    [ACTIONS.LOG_OUT](state): Promise<void> {
         return new Promise((resolve, reject) => {
 
             userDefaults.set(USER_DEFAULTS.LOGGED_IN, 'false')
                 .then(() => {
                     state.commit(MUTATIONS.SET_LOGGED_IN, false);
+                    state.commit(MUTATIONS.CLEAR_ACCESS_TOKEN);
+                    Keychain.remove(KEYCHAIN.REFRESH_EXPIRY).then();
+                    Keychain.remove(KEYCHAIN.REFRESH_TOKEN).then();
                     resolve();
-                }).catch( e => reject(e));
+                }).catch(e => reject(e));
         })
     },
 
-    [ACTIONS.FETCH_TOKENS_PWD_GRANT](state, [username, password]) {
+    [ACTIONS.FETCH_TOKENS_PWD_GRANT](state, [username, password]): Promise<void> {
         return new Promise((resolve, reject) => {
 
             authService.fetchTokensPwdGrant(username, password).then(
@@ -112,24 +123,38 @@ const actions: ActionTree<State, any> = {
 
                         if (data !== null) {
 
-                            const accessExpiry: Date = new Date();
-                            accessExpiry.setSeconds(accessExpiry.getSeconds() + data.expires_in);
-
-                            const refreshExpiry: Date = new Date();
-                            refreshExpiry.setSeconds(refreshExpiry.getSeconds() + data.refresh_expires_in);
-
-                            state.commit(MUTATIONS.SET_ACCESS_TOKEN, data.access_token);
-                            state.commit(MUTATIONS.SET_ACCESS_EXPIRY, accessExpiry);
-                            state.commit(MUTATIONS.SET_REFRESH_TOKEN, data.refresh_token);
-                            state.commit(MUTATIONS.SET_REFRESH_EXPIRY, refreshExpiry);
-
-                            resolve();
+                            updateTokens(state, data).then(() => resolve());
 
                         } else {
-                            reject("unable to get tokens for user")
+                            reject("unable to get tokens from password grant")
                         }
                     }
-                }).catch(e => {reject(e)});
+                }).catch(e => {
+                reject(e)
+            });
+        });
+    },
+    [ACTIONS.FETCH_TOKENS_REFRESH_GRANT](state): Promise<void> {
+        return new Promise((resolve, reject) => {
+            Keychain.getJson(KEYCHAIN.REFRESH_TOKEN).then(value => {
+                authService.fetchTokensRefreshTokenGrant(value).then(response => {
+                    let data: KeyCloakTokens | null = null;
+
+                    // console.log("Status code: " + response.status + ", Status text: " + response.statusText);
+
+                    if (response.statusText === 'OK') {
+                        data = response.data;
+
+                        if (data !== null) {
+
+                            updateTokens(state, data).then(() => resolve());
+
+                        } else {
+                            reject("unable to get tokens from refresh grant")
+                        }
+                    }
+                }).catch(e => reject(e));
+            }).catch(e => reject(e));
         });
     }
 }
@@ -143,9 +168,25 @@ const getters: GetterTree<State, any> = {
         }).catch(() => {
             return Promise.reject("Unable to get logged in status")
         })
-    }
-}
+    },
+    getRefreshIsExpired(): Promise<boolean> {
+        return new Promise<boolean>( (resolve, reject) => {
 
+            Keychain.getJson(KEYCHAIN.REFRESH_EXPIRY).then( value => {
+                console.log(value);
+                const expiryDate = new Date(value);
+                if (expiryDate < new Date()) {
+                    console.log("isExpired")
+                    resolve(true)
+                } else {
+                    console.log("isNotExpired")
+                    resolve(false)
+                }
+            }).catch(e => reject(e));
+        } )
+    }
+
+}
 
 export const store = createStore<State>({state, getters, actions, mutations});
 
