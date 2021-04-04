@@ -8,7 +8,7 @@
 import { IonApp, IonRouterOutlet } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { useStore } from "@/store";
-import { UserDefaults } from "@/services/UserDefaults";
+import { UserDefaults } from "@/store/UserDefaults";
 
 export default defineComponent({
   name: 'App',
