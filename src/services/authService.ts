@@ -30,5 +30,14 @@ export default {
         params.append('password', password);
 
         return keycloakMobileClient.post<KeyCloakTokens>("/", params);
+    },
+    fetchTokensRefreshTokenGrant(refreshToken: string): Promise<AxiosResponse<KeyCloakTokens>> {
+
+        const params = new URLSearchParams();
+        params.append('grant_type', 'refresh_token');
+        params.append('client_id', 'mobile_client');
+        params.append('refresh_token', refreshToken);
+
+        return keycloakMobileClient.post<KeyCloakTokens>("/", params);
     }
 }
