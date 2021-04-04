@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@capacitor/core": "2.4.7",
+    "@capacitor/ios": "^2.4.7",
     "@ionic-native/keychain": "^5.31.1",
     "@ionic/storage": "^3.0.4",
     "@ionic/vue": "^5.4.0",
