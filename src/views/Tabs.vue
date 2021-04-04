@@ -20,7 +20,7 @@
 <script lang="ts">
 import {IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs} from '@ionic/vue';
 import {qrCode, qrCodeOutline, school} from 'ionicons/icons';
-import {MUTATIONS, useStore} from "@/store";
+import {ACTIONS, useStore} from "@/store";
 import {useRouter} from "vue-router";
 
 export default {
@@ -31,10 +31,18 @@ export default {
     const store = useStore();
     const router = useRouter()
 
-    const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn
+    const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn;
     loggedInPromise.then(loggedIn => {
       if (!loggedIn) {
-        store.commit(MUTATIONS.CLEAR_TOKENS);
+        store.dispatch(ACTIONS.LOG_OUT);
+        router.push({name: 'login'});
+      }
+    }).catch(e => console.error(e));
+
+    const refreshExpiryPromise = store.getters.getRefreshIsExpired;
+    refreshExpiryPromise.then((isExpired: boolean) => {
+      if (isExpired) {
+        store.dispatch(ACTIONS.LOG_OUT);
         router.push({name: 'login'});
       }
     });
