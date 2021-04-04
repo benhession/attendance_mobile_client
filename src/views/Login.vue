@@ -102,8 +102,9 @@ export default {
 
 <style scoped>
 .login-form-container {
-  height: 50%;
+  height: 60%;
   width: 100%;
+  padding-right: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,6 +115,7 @@ export default {
 }
 
 .login-btn {
+  margin-top: 50px;
   width: 100%;
 }
 
