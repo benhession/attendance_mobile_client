@@ -64,57 +64,73 @@ const mutations: MutationTree<State> = {
 export const enum ACTIONS {
     LOG_IN = 'LOG_IN',
     FETCH_TOKENS_PWD_GRANT = 'FETCH_TOKENS_PWD_GRANT',
+    LOG_OUT = 'LOG_OUT',
+    // TODO: save refresh token to keychain
     SAVE_REFRESH_TO_KEYCHAIN = 'SAVE_REFRESH_TO_KEYCHAIN'
 }
 
 const actions: ActionTree<State, any> = {
     [ACTIONS.LOG_IN](state, [username, password]) {
-
-        console.log("Username = " + username);
-        state.dispatch(ACTIONS.FETCH_TOKENS_PWD_GRANT, [username, password])
-            .then(() => {
-                state.commit(MUTATIONS.SET_LOGGED_IN, true);
-                userDefaults.set(USER_DEFAULTS.LOGGED_IN, 'true').catch(
-                    e => console.error("user defaults error in Actions.LOG_IN " + e)
-                );
-            })
-            .catch(error => console.error(error));
+        return new Promise((resolve, reject) => {
+            state.dispatch(ACTIONS.FETCH_TOKENS_PWD_GRANT, [username, password])
+                .then(() => {
+                    userDefaults.set(USER_DEFAULTS.LOGGED_IN, 'true')
+                        .then(() => {
+                            state.commit(MUTATIONS.SET_LOGGED_IN, true);
+                        }).catch(e => reject(e));
+                    resolve();
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        });
     },
-    [ACTIONS.FETCH_TOKENS_PWD_GRANT](state, [username, password]) {
 
-        authService.fetchTokensPwdGrant(username, password).then(
-            (response) => {
+    [ACTIONS.LOG_OUT](state) {
+        return new Promise((resolve, reject) => {
 
-                let data: KeyCloakTokens | null = null;
-
-                console.log("Status code: " + response.status + ", Status text: " + response.statusText);
-
-                if (response.statusText === 'OK') {
-                    console.log(response.data);
-                    data = response.data;
-
-                    if (data !== null) {
-
-                        const accessExpiry: Date = new Date();
-                        accessExpiry.setSeconds(accessExpiry.getSeconds() + data.expires_in);
-
-                        const refreshExpiry: Date = new Date();
-                        refreshExpiry.setSeconds(refreshExpiry.getSeconds() + data.refresh_expires_in);
-
-                        state.commit(MUTATIONS.SET_ACCESS_TOKEN, data.access_token);
-                        state.commit(MUTATIONS.SET_ACCESS_EXPIRY, accessExpiry);
-                        state.commit(MUTATIONS.SET_REFRESH_TOKEN, data.refresh_token);
-                        state.commit(MUTATIONS.SET_REFRESH_EXPIRY, refreshExpiry);
-
-                    } else {
-                        throw console.error("Unable to get auth tokens using password grant: status = "
-                            + response.statusText);
-                    }
-                }
-            }).catch(e => {
-            console.log("thrown")
-            console.error(e)
+            userDefaults.set(USER_DEFAULTS.LOGGED_IN, 'false')
+                .then(() => {
+                    state.commit(MUTATIONS.SET_LOGGED_IN, false);
+                    resolve();
+                }).catch( e => reject(e));
         })
+    },
+
+    [ACTIONS.FETCH_TOKENS_PWD_GRANT](state, [username, password]) {
+        return new Promise((resolve, reject) => {
+
+            authService.fetchTokensPwdGrant(username, password).then(
+                (response) => {
+
+                    let data: KeyCloakTokens | null = null;
+
+                    // console.log("Status code: " + response.status + ", Status text: " + response.statusText);
+
+                    if (response.statusText === 'OK') {
+                        data = response.data;
+
+                        if (data !== null) {
+
+                            const accessExpiry: Date = new Date();
+                            accessExpiry.setSeconds(accessExpiry.getSeconds() + data.expires_in);
+
+                            const refreshExpiry: Date = new Date();
+                            refreshExpiry.setSeconds(refreshExpiry.getSeconds() + data.refresh_expires_in);
+
+                            state.commit(MUTATIONS.SET_ACCESS_TOKEN, data.access_token);
+                            state.commit(MUTATIONS.SET_ACCESS_EXPIRY, accessExpiry);
+                            state.commit(MUTATIONS.SET_REFRESH_TOKEN, data.refresh_token);
+                            state.commit(MUTATIONS.SET_REFRESH_EXPIRY, refreshExpiry);
+
+                            resolve();
+
+                        } else {
+                            reject("unable to get tokens for user")
+                        }
+                    }
+                }).catch(e => {reject(e)});
+        });
     }
 }
 
