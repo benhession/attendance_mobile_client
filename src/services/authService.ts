@@ -1,7 +1,7 @@
 import axios, {AxiosResponse} from "axios";
 
 const keycloakMobileClient = axios.create({
-    baseURL: 'http://127.0.0.1:9090/auth/realms/master/protocol/openid-connect/token',
+    baseURL: 'http://192.168.0.13:9090/auth/realms/master/protocol/openid-connect/token',
     headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'application/json'
