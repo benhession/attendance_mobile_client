@@ -8,6 +8,10 @@ const keycloakMobileClient = axios.create({
     }
 })
 
+const clientSecret = 'ee804d58-5985-47db-9938-e6a598ef41bc';
+const clientID = 'mobile_client';
+const scope = 'mobile_client';
+
 export interface KeyCloakTokens {
     access_token: string;
     expires_in: number;
@@ -24,8 +28,9 @@ export default {
 
         const params = new URLSearchParams();
         params.append('grant_type', 'password');
-        params.append('client_id', 'mobile_client');
-        params.append('scope', 'mobile_client');
+        params.append('client_id', clientID);
+        params.append('scope', scope);
+        params.append('client_secret', clientSecret);
         params.append('username', username);
         params.append('password', password);
 
@@ -35,7 +40,8 @@ export default {
 
         const params = new URLSearchParams();
         params.append('grant_type', 'refresh_token');
-        params.append('client_id', 'mobile_client');
+        params.append('client_id', clientID);
+        params.append('client_secret', clientSecret);
         params.append('refresh_token', refreshToken);
 
         return keycloakMobileClient.post<KeyCloakTokens>("/", params);
