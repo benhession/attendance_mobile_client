@@ -12,7 +12,7 @@ export default {
         const config: AxiosRequestConfig = {
             headers: {
                 Authorization: token,
-                Accept: "application/json, text/plain"
+                Accept: "application/json"
             }
         }
 
