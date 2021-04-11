@@ -2,7 +2,9 @@ import {InjectionKey} from 'vue';
 import {ActionContext, ActionTree, createStore, GetterTree, MutationTree, Store, useStore as baseUseStore} from 'vuex';
 import authService, {KeyCloakTokens} from "@/services/authService";
 import {UserDefaults} from "@/store/UserDefaults";
-import { Keychain } from "@ionic-native/keychain";
+import {Keychain} from "@ionic-native/keychain";
+import {StudentUniversityClass, StudentUniversityClassInterface} from "@/model/StudentUniversityClass";
+import universityClassService from "@/services/universityClassService"
 
 const userDefaults = UserDefaults.getInstance();
 
@@ -19,6 +21,7 @@ export interface State {
     loggedIn: boolean;
     accessToken: string;
     accessTokenExpiry: Date | null;
+    studentClasses: Array<StudentUniversityClass>;
 }
 
 export const key: InjectionKey<Store<State>> = Symbol();
@@ -26,6 +29,7 @@ const state: State = {
     loggedIn: false,
     accessToken: "",
     accessTokenExpiry: null,
+    studentClasses: new Array<StudentUniversityClass>()
 }
 
 // enum for auto-completion
@@ -33,22 +37,30 @@ export const enum MUTATIONS {
     SET_LOGGED_IN = 'SET_LOGGED_IN',
     SET_ACCESS_TOKEN = 'SET_ACCESS_TOKEN',
     SET_ACCESS_EXPIRY = 'SET_ACCESS_EXPIRY',
-    CLEAR_ACCESS_TOKEN = 'CLEAR_TOKENS'
+    CLEAR_ACCESS_TOKEN = 'CLEAR_TOKENS',
+    UPDATE_STUDENT_CLASSES = 'UPDATE_STUDENT_CLASSES'
 }
 
 const mutations: MutationTree<State> = {
     [MUTATIONS.SET_LOGGED_IN](state, loggedIn: boolean) {
         state.loggedIn = loggedIn;
     },
+
     [MUTATIONS.SET_ACCESS_TOKEN](state, tokenString: string) {
         state.accessToken = tokenString;
     },
+
     [MUTATIONS.SET_ACCESS_EXPIRY](state, dateTime: Date) {
         state.accessTokenExpiry = dateTime;
     },
+
     [MUTATIONS.CLEAR_ACCESS_TOKEN](state) {
         state.accessToken = "";
         state.accessTokenExpiry = null;
+    },
+
+    [MUTATIONS.UPDATE_STUDENT_CLASSES](state, classes: Array<StudentUniversityClass>) {
+        state.studentClasses = classes;
     }
 }
 
@@ -56,7 +68,9 @@ export const enum ACTIONS {
     LOG_IN = 'LOG_IN',
     FETCH_TOKENS_PWD_GRANT = 'FETCH_TOKENS_PWD_GRANT',
     LOG_OUT = 'LOG_OUT',
-    FETCH_TOKENS_REFRESH_GRANT = 'FETCH_TOKENS_REFRESH_GRANT'
+    FETCH_TOKENS_REFRESH_GRANT = 'FETCH_TOKENS_REFRESH_GRANT',
+    FETCH_STUDENT_CLASSES = 'FETCH_STUDENT_CLASSES',
+    UPDATE_ACCESS_TOKEN = 'UPDATE_ACCESS_TOKEN'
 }
 
 // actions helper function
@@ -116,8 +130,6 @@ const actions: ActionTree<State, any> = {
 
                     let data: KeyCloakTokens | null = null;
 
-                    // console.log("Status code: " + response.status + ", Status text: " + response.statusText);
-
                     if (response.statusText === 'OK') {
                         data = response.data;
 
@@ -134,13 +146,12 @@ const actions: ActionTree<State, any> = {
             });
         });
     },
+
     [ACTIONS.FETCH_TOKENS_REFRESH_GRANT](state): Promise<void> {
         return new Promise((resolve, reject) => {
             Keychain.getJson(KEYCHAIN.REFRESH_TOKEN).then(value => {
                 authService.fetchTokensRefreshTokenGrant(value).then(response => {
                     let data: KeyCloakTokens | null = null;
-
-                    // console.log("Status code: " + response.status + ", Status text: " + response.statusText);
 
                     if (response.statusText === 'OK') {
                         data = response.data;
@@ -152,6 +163,59 @@ const actions: ActionTree<State, any> = {
                         } else {
                             reject("unable to get tokens from refresh grant")
                         }
+                    }
+                }).catch(e => reject(e));
+            }).catch(e => reject(e));
+        });
+    },
+
+    [ACTIONS.UPDATE_ACCESS_TOKEN](state): Promise<void> {
+        return new Promise((resolve, reject) => {
+
+            if (state.getters.getAccessTokenIsExpired) {
+
+                // if the access token is expired check the refresh token
+                const refreshIsExpiredPromise = state.getters.getRefreshIsExpired;
+                    refreshIsExpiredPromise.then((isExpired: boolean) => {
+                    if (isExpired) {
+                        // reject push to log in screen should be implemented in the view controller
+                        state.dispatch(ACTIONS.LOG_OUT).then(() => {
+                            reject("refresh token is expired log out the application")
+                        });
+                    } else {
+                        // otherwise update the tokens
+                        state.dispatch(ACTIONS.FETCH_TOKENS_REFRESH_GRANT).then(() => resolve());
+                    }
+                }).catch((e: Error) => reject("get refresh isExpired failed" + e));
+
+            } else {
+                // if the access token is not expired then resolve
+                resolve();
+            }
+        })
+    },
+
+    [ACTIONS.FETCH_STUDENT_CLASSES](state): Promise<void> {
+        return new Promise((resolve, reject) => {
+
+            state.dispatch(ACTIONS.UPDATE_ACCESS_TOKEN).then(() => {
+
+                const accessToken = state.getters.getAccessToken;
+
+                universityClassService.fetchStudentClasses(accessToken).then(response => {
+                    if (response.status === 200) {
+
+                        const dataArray: Array<StudentUniversityClassInterface> = response.data;
+                        const classObjectArray: Array<StudentUniversityClass> = new Array<StudentUniversityClass>();
+
+                        dataArray.forEach(studentClass => classObjectArray
+                            .push(new StudentUniversityClass(studentClass)));
+
+                        state.commit(MUTATIONS.UPDATE_STUDENT_CLASSES, classObjectArray);
+
+                        resolve();
+                    } else {
+                        reject("Unable to get classes from resource server")
                     }
                 }).catch(e => reject(e));
             }).catch(e => reject(e));
@@ -170,20 +234,30 @@ const getters: GetterTree<State, any> = {
         })
     },
     getRefreshIsExpired(): Promise<boolean> {
-        return new Promise<boolean>( (resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
 
-            Keychain.getJson(KEYCHAIN.REFRESH_EXPIRY).then( value => {
-                console.log(value);
+            Keychain.getJson(KEYCHAIN.REFRESH_EXPIRY).then(value => {
                 const expiryDate = new Date(value);
-                if (expiryDate < new Date()) {
-                    console.log("isExpired")
+                if (new Date() > expiryDate) {
                     resolve(true)
                 } else {
-                    console.log("isNotExpired")
                     resolve(false)
                 }
             }).catch(e => reject(e));
-        } )
+        })
+    },
+    getAccessTokenIsExpired(): boolean {
+        if (state.accessTokenExpiry !== null) {
+            return new Date() > state.accessTokenExpiry;
+        } else {
+            return true;
+        }
+    },
+    getAccessToken(): string {
+        return state.accessToken;
+    },
+    getStudentClasses(): Array<StudentUniversityClass> {
+        return state.studentClasses;
     }
 
 }
