@@ -58,6 +58,7 @@ export default {
     IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButton, IonItem, IonList, IonInput, IonLabel
   },
   setup() {
+
     const router = useRouter()
     const store = useStore();
 
@@ -70,7 +71,7 @@ export default {
     const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn
     loggedInPromise.then((loggedIn) => {
       if (loggedIn) {
-        router.push({name: 'tab1'})
+        router.push({name: 'ClassesTab'})
       }
     }).catch(reason => console.error(reason));
 
@@ -78,7 +79,7 @@ export default {
     function logIn() {
       store.dispatch(ACTIONS.LOG_IN, [username.value, password.value])
           .then(() => {
-            router.push({name: 'tab1'})
+            router.push({name: 'ClassesTab'})
           })
           .catch((e) => {
             if (e instanceof Error) {

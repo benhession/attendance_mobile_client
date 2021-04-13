@@ -15,17 +15,17 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        redirect: '/tabs/tab1'
+        redirect: '/tabs/ClassesTab'
       },
       {
-        path: 'tab1',
-        name: 'tab1',
-        component: () => import('@/views/Tab1.vue')
+        path: 'ClassesTab',
+        name: 'ClassesTab',
+        component: () => import('@/views/ClassesTab.vue')
       },
       {
-        path: 'tab2',
-        name: 'tab2',
-        component: () => import('@/views/Tab2.vue')
+        path: 'QRTab',
+        name: 'QRTab',
+        component: () => import('@/views/QRTab.vue')
       }
     ]
   }
