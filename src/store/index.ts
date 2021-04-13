@@ -38,7 +38,8 @@ export const enum MUTATIONS {
     SET_ACCESS_TOKEN = 'SET_ACCESS_TOKEN',
     SET_ACCESS_EXPIRY = 'SET_ACCESS_EXPIRY',
     CLEAR_ACCESS_TOKEN = 'CLEAR_TOKENS',
-    UPDATE_STUDENT_CLASSES = 'UPDATE_STUDENT_CLASSES'
+    UPDATE_STUDENT_CLASSES = 'UPDATE_STUDENT_CLASSES',
+    CLEAR_STUDENT_CLASSES = 'CLEAR_STUDENT_CLASSES'
 }
 
 const mutations: MutationTree<State> = {
@@ -61,7 +62,11 @@ const mutations: MutationTree<State> = {
 
     [MUTATIONS.UPDATE_STUDENT_CLASSES](state, classes: Array<StudentUniversityClass>) {
         state.studentClasses = classes;
+    },
+    [MUTATIONS.CLEAR_STUDENT_CLASSES](state) {
+        state.studentClasses = []
     }
+
 }
 
 export const enum ACTIONS {
@@ -86,7 +91,7 @@ function updateTokens(state: ActionContext<State, any>, data: KeyCloakTokens): P
     state.commit(MUTATIONS.SET_ACCESS_EXPIRY, accessExpiry);
 
     Keychain.setJson(KEYCHAIN.REFRESH_TOKEN, data.refresh_token, false)
-        .catch(e => console.error(e));
+        .catch(e => new Error("Unable to set json in keychain: " + e));
     return Keychain.setJson(KEYCHAIN.REFRESH_EXPIRY, refreshExpiry.toISOString(), false);
 
 }
@@ -102,9 +107,7 @@ const actions: ActionTree<State, any> = {
                         }).catch(e => reject(e));
                     resolve();
                 })
-                .catch(error => {
-                    reject(error)
-                })
+                .catch((e: Error) => reject(e))
         });
     },
 
@@ -115,10 +118,11 @@ const actions: ActionTree<State, any> = {
                 .then(() => {
                     state.commit(MUTATIONS.SET_LOGGED_IN, false);
                     state.commit(MUTATIONS.CLEAR_ACCESS_TOKEN);
+                    state.commit(MUTATIONS.CLEAR_STUDENT_CLASSES);
                     Keychain.remove(KEYCHAIN.REFRESH_EXPIRY).then();
                     Keychain.remove(KEYCHAIN.REFRESH_TOKEN).then();
                     resolve();
-                }).catch(e => reject(e));
+                }).catch((e) => reject(new Error("Unable to set 'Logged In' user default' " + e)));
         })
     },
 
@@ -138,12 +142,10 @@ const actions: ActionTree<State, any> = {
                             updateTokens(state, data).then(() => resolve());
 
                         } else {
-                            reject("unable to get tokens from password grant")
+                            reject(new Error("unable to get tokens from password grant"))
                         }
                     }
-                }).catch(e => {
-                reject(e)
-            });
+                }).catch((e: Error)=> reject(e));
         });
     },
 
@@ -161,11 +163,11 @@ const actions: ActionTree<State, any> = {
                             updateTokens(state, data).then(() => resolve());
 
                         } else {
-                            reject("unable to get tokens from refresh grant")
+                            reject(new Error("unable to get tokens from refresh grant"))
                         }
                     }
-                }).catch(e => reject(e));
-            }).catch(e => reject(e));
+                }).catch((e: Error) => reject(e));
+            }).catch((e: Error) => reject(e));
         });
     },
 
@@ -176,17 +178,17 @@ const actions: ActionTree<State, any> = {
 
                 // if the access token is expired check the refresh token
                 const refreshIsExpiredPromise = state.getters.getRefreshIsExpired;
-                    refreshIsExpiredPromise.then((isExpired: boolean) => {
+                refreshIsExpiredPromise.then((isExpired: boolean) => {
                     if (isExpired) {
-                        // reject push to log in screen should be implemented in the view controller
-                        state.dispatch(ACTIONS.LOG_OUT).then(() => {
-                            reject("refresh token is expired log out the application")
-                        });
+                        // reject log out and push to log in screen should be implemented in the view controller
+                        reject(new Error("refresh token is expired"))
                     } else {
                         // otherwise update the tokens
-                        state.dispatch(ACTIONS.FETCH_TOKENS_REFRESH_GRANT).then(() => resolve());
+                        state.dispatch(ACTIONS.FETCH_TOKENS_REFRESH_GRANT)
+                            .then(() => resolve())
+                            .catch((e: Error) => reject(e));
                     }
-                }).catch((e: Error) => reject("get refresh isExpired failed" + e));
+                }).catch(() => reject(new Error("get refresh isExpired failed")));
 
             } else {
                 // if the access token is not expired then resolve
@@ -208,17 +210,17 @@ const actions: ActionTree<State, any> = {
                         const dataArray: Array<StudentUniversityClassInterface> = response.data;
                         const classObjectArray: Array<StudentUniversityClass> = new Array<StudentUniversityClass>();
 
-                        dataArray.forEach(studentClass => classObjectArray
-                            .push(new StudentUniversityClass(studentClass)));
+                        dataArray.forEach(studentClass =>
+                            classObjectArray.push(new StudentUniversityClass(studentClass)));
 
                         state.commit(MUTATIONS.UPDATE_STUDENT_CLASSES, classObjectArray);
 
                         resolve();
                     } else {
-                        reject("Unable to get classes from resource server")
+                        reject(new Error("Unable to get classes from the resource server"))
                     }
-                }).catch(e => reject(e));
-            }).catch(e => reject(e));
+                }).catch((e: Error) => reject(e));
+            }).catch((e: Error) => reject(e));
         });
     }
 }
@@ -230,7 +232,7 @@ const getters: GetterTree<State, any> = {
             state.loggedIn = response === 'true';
             return state.loggedIn
         }).catch(() => {
-            return Promise.reject("Unable to get logged in status")
+            return Promise.reject(new Error("Unable to get logged in status"))
         })
     },
     getRefreshIsExpired(): Promise<boolean> {
