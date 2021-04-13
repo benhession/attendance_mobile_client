@@ -16,7 +16,7 @@ export interface StudentUniversityClassInterface {
     classId: string;
     name: string;
     location: string;
-    datetime: string;
+    dateTime: string;
     duration: string;
     classType: string;
     module: UniversityModule;
@@ -28,8 +28,8 @@ export class StudentUniversityClass {
     private readonly _classId: string;
     private readonly _name: string;
     private readonly _location: string;
-    private readonly _datetime: moment.Moment;
-    private readonly _duration: moment.Duration;
+    private readonly _dateTime: string;
+    private readonly _duration: string;
     private readonly _classType: string;
     private readonly _module: UniversityModule;
     private readonly _tutor: Tutor;
@@ -39,8 +39,8 @@ export class StudentUniversityClass {
         this._classId = classInterface.classId;
         this._name = classInterface.name;
         this._location = classInterface.location;
-        this._datetime = moment(classInterface.datetime).utc();
-        this._duration = moment.duration(classInterface.duration);
+        this._dateTime = classInterface.dateTime;
+        this._duration = classInterface.duration;
         this._classType = classInterface.classType;
         this._module = classInterface.module;
         this._tutor = classInterface.tutor;
@@ -61,15 +61,15 @@ export class StudentUniversityClass {
     }
 
     get datetimeUTC(): moment.Moment {
-        return this._datetime.utc();
+        return moment(this._dateTime).utc();
     }
 
     get datetime(): moment.Moment {
-        return this._datetime;
+        return moment(this._dateTime);
     }
 
     get duration(): moment.Duration {
-        return this._duration;
+        return moment.duration(this._duration);
     }
 
     get classType(): string {
