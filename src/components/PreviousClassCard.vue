@@ -7,8 +7,9 @@
     </ion-card-subtitle>
     <ion-card-title>{{ theClass.name }}</ion-card-title>
     <ion-card-content>
-      <p>Class type: {{ theClass.classType }}</p>
-      <p>Tutor: {{ theClass.tutor.forename }} {{ theClass.tutor.surname }}</p>
+      <p><b>Class type:</b> {{ theClass.classType }}</p>
+      <p><b>Tutor:</b> {{ theClass.tutor.forename }} {{ theClass.tutor.surname }}</p>
+      <p><b>Location:</b> {{ theClass.location }}</p>
     </ion-card-content>
 
     <ion-chip v-if="theClass.attended" color="success" class="ion-float-right">
