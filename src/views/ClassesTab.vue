@@ -57,11 +57,11 @@ import {
   IonTitle,
   IonToolbar
 } from '@ionic/vue';
-import {ref, onMounted} from "vue"
-import {ACTIONS, useStore} from "@/store";
+import {ref, computed} from "vue"
+import {useStore} from "@/store";
 import {useRouter} from "vue-router";
 import {presentLogoutAlert} from "@/alerts/logoutAlert";
-import {presentMessageAlert} from "@/alerts/messageAlert";
+
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
 import moment from "moment";
 import UpcomingClassCard from "@/components/UpcomingClassCard.vue";
@@ -86,49 +86,33 @@ export default {
   },
   setup() {
 
+    //Constants
     const store = useStore();
     const router = useRouter();
-    const logoutAlert = () => presentLogoutAlert(store, router);
-    let classes: StudentUniversityClass[] = new Array<StudentUniversityClass>();
-    // reactive variables
-    const upcomingClasses = ref<Array<StudentUniversityClass>>(new Array<StudentUniversityClass>());
-    const previousClasses = ref<Array<StudentUniversityClass>>(new Array<StudentUniversityClass>());
+
+
+    //Reactive references
     const segmentValue = ref('upcoming');
 
-    //TODO: clear classes on logout
-    onMounted(() => {
-      // fetch student classes
-      store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES)
-          .then(() => {
+    //Computed properties
+    const classes = computed(() => {return store.state.studentClasses});
 
-            classes = store.getters.getStudentClasses;
+    const upcomingClasses = computed(() => {
+      const currentClasses: StudentUniversityClass[] = classes.value;
 
-            // organise by date
-            function getUpcomingClasses(classes: Array<StudentUniversityClass>): Array<StudentUniversityClass> {
-              return classes.filter(theClass => theClass.datetime.add(theClass.duration) > moment())
-                  .sort((a, b) => a.datetime <= b.datetime ? -1 : 1);
-            }
+      return currentClasses.filter((theClass) => theClass.datetime.add(theClass.duration) > moment())
+          .sort((a, b) => a.datetime <= b.datetime ? -1 : 1);
+    });
+    const previousClasses = computed(() => {
+      const currentClasses: StudentUniversityClass[] = classes.value;
 
-            function getPreviousClasses(classes: Array<StudentUniversityClass>): Array<StudentUniversityClass> {
-              return classes.filter(theClass => theClass.datetime.add(theClass.duration) < moment())
-                  .sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
-            }
-
-            upcomingClasses.value = getUpcomingClasses(classes);
-            previousClasses.value = getPreviousClasses(classes);
-
-          })
-          .catch((e: Error) => {
-            console.log(e);
-            if (e.message === "refresh token is expired") {
-              store.dispatch(ACTIONS.LOG_OUT).then(() => router.push({name: 'login'}))
-            } else {
-              presentMessageAlert(store, router, 'Error', e.message)
-            }
-          });
+      return currentClasses.filter(theClass => theClass.datetime.add(theClass.duration) < moment())
+          .sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
     });
 
-    // show selected classes
+    // functions
+    const logoutAlert = () => presentLogoutAlert(store, router);
+
     function segmentChanged(ev: CustomEvent) {
       segmentValue.value = ev.detail.value;
     }
