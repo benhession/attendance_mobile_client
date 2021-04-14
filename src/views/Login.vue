@@ -67,11 +67,14 @@ export default {
     const username = ref("");
     const password = ref("");
 
-    // if logged in push to tab1 view
+    // if logged in fetch classes and push to classesTab.vue
     const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn
     loggedInPromise.then((loggedIn) => {
       if (loggedIn) {
-        router.push({name: 'ClassesTab'})
+        store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
+          router.push({name: 'ClassesTab'})
+        });
+
       }
     }).catch(reason => console.error(reason));
 
