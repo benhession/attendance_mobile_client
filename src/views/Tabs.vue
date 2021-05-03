@@ -57,3 +57,11 @@ export default {
   }
 }
 </script>
+
+<style>
+@media (prefers-color-scheme: dark) {
+  .ios ion-tab-bar {
+    --ion-background-color: black;
+  }
+}
+</style>

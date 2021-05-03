@@ -8,7 +8,10 @@
         <ion-title>Scan QR code</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="transparent" :fullscreen="true">
+    <ion-content :scroll-y="false" style="--ion-background-color: transparent">
+      <div class="scan-box-container">
+        <ion-icon :icon="scan" class="scan-box"></ion-icon>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -18,12 +21,14 @@ import {
   IonButton,
   IonButtons,
   IonHeader,
+  IonIcon,
   IonPage,
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
   onIonViewWillLeave
 } from '@ionic/vue';
+import {scan} from 'ionicons/icons';
 import {useStore} from "@/store";
 import {useRouter} from "vue-router";
 import {presentLogoutAlertAndCallback} from "@/alerts/logoutAlert";
@@ -33,7 +38,7 @@ import {CheckPermissionResult, SupportedFormat} from "@capacitor-community/barco
 
 export default {
   name: 'QRTab',
-  components: {IonHeader, IonToolbar, IonTitle, IonPage, IonButtons, IonButton},
+  components: {IonHeader, IonToolbar, IonTitle, IonPage, IonButtons, IonButton, IonIcon},
   setup() {
 
     const store = useStore();
@@ -94,14 +99,24 @@ export default {
 
     const logoutAlert = () => presentLogoutAlertAndCallback(store, router, () => stopScan());
 
-    return {logoutAlert}
+    return {logoutAlert, scan}
   }
 }
 </script>
-<style scoped>
 
-  .transparent {
-    --ion-background-color: #00000000;
+<style>
+  .scan-box {
+    color: #EAFBF480;
+    font-size: 45vh;
+    margin: 0 auto;
   }
 
+  .scan-box-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
+

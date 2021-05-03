@@ -128,4 +128,10 @@ export default {
   padding: .2em 2em;
 }
 
+/* required to make the camera preview visible */
+@media (prefers-color-scheme: dark) {
+  .ios ion-content {
+    --ion-background-color: black;
+  }
+}
 </style>
