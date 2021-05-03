@@ -11,6 +11,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@capacitor-community/barcode-scanner": "^1.2.1",
     "@capacitor/core": "2.4.7",
     "@capacitor/ios": "^2.4.7",
     "@ionic-native/keychain": "^5.31.1",

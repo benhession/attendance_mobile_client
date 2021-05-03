@@ -24,3 +24,27 @@ export async function presentLogoutAlert(store: Store<State>, router: Router) {
     })
     return alert.present();
 }
+
+export async function presentLogoutAlertAndCallback(store: Store<State>, router: Router, onLogOut: () => void ) {
+    const alert = await alertController.create({
+        header: 'Logout',
+        message: 'Do you want to logout?',
+        backdropDismiss: false,
+        buttons: [
+            {
+                text: 'Dismiss'
+            },
+            {
+                text: 'Logout',
+                handler: () => {
+                    store.dispatch(ACTIONS.LOG_OUT).then(() => {
+                        onLogOut();
+                        router.push({name: 'login'});
+                    }).catch(e => console.error(e));
+                }
+            }
+        ]
+    })
+    return alert.present();
+}
+
