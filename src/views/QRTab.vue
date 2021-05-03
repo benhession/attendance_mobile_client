@@ -9,9 +9,15 @@
       </ion-toolbar>
     </ion-header>
     <ion-content :scroll-y="false" style="--ion-background-color: transparent">
-      <div class="scan-box-container">
+
+      <div v-if="scanActive" class="scan-box-container">
         <ion-icon :icon="scan" class="scan-box"></ion-icon>
       </div>
+
+      <div v-else-if="!permissionGranted" class="scan-box-container">
+        <ion-button @click="presentOpenSettingsAlert()">Scan QR code</ion-button>
+      </div>
+
     </ion-content>
   </ion-page>
 </template>
@@ -32,60 +38,68 @@ import {scan} from 'ionicons/icons';
 import {useStore} from "@/store";
 import {useRouter} from "vue-router";
 import {presentLogoutAlertAndCallback} from "@/alerts/logoutAlert";
-import {presentPermissionConfirmation} from "@/alerts/qrPermissionAlerts";
+import {presentOpenSettingsAlert} from "@/alerts/qrPermissionAlerts";
 import {Plugins} from "@capacitor/core";
 import {CheckPermissionResult, SupportedFormat} from "@capacitor-community/barcode-scanner";
+import {ref} from "vue";
 
 export default {
   name: 'QRTab',
   components: {IonHeader, IonToolbar, IonTitle, IonPage, IonButtons, IonButton, IonIcon},
   setup() {
 
+    // constants
     const store = useStore();
     const router = useRouter();
+
+    // reactive refs
+    const scanActive = ref(false);
+    const permissionGranted = ref(true);
+
+    function stopScan() {
+      const {BarcodeScanner} = Plugins;
+      scanActive.value = false;
+
+      BarcodeScanner.showBackground();
+      BarcodeScanner.stopScan();
+    }
 
     async function startScan() {
       const {BarcodeScanner} = Plugins;
 
       await BarcodeScanner.hideBackground();
+      scanActive.value = true;
       const result = await BarcodeScanner.startScan({targetedFormats: [SupportedFormat.QR_CODE]});
 
       if (result.hasContent) {
         console.log(result.content);
+        stopScan();
       }
-    }
-
-    function stopScan() {
-      const {BarcodeScanner} = Plugins;
-      BarcodeScanner.showBackground();
-      BarcodeScanner.stopScan();
     }
 
     async function didUserGrantPermission(): Promise<boolean> {
       const {BarcodeScanner} = Plugins;
-      // prepare scanner
-      await BarcodeScanner.prepare();
+
       // check if user has granted permission
       const status: CheckPermissionResult = await BarcodeScanner.checkPermission({force: false});
 
       if (status.granted) {
+        // permission is granted
         return true;
       } else if (status.denied || status.restricted || status.unknown) {
+        // permission isn't granted - show open settings button by setting reactive ref to false
+        permissionGranted.value = false;
         return false;
-        // TODO: Allow user to open settings if permission is denied (put option in webview)
       } else if (status.neverAsked) {
-        const confirm = await presentPermissionConfirmation();
-        if (!confirm) {
-          // user denied permission
-          return false;
+        // get permission from the system
+        const statusRequest: CheckPermissionResult = await BarcodeScanner.checkPermission({force: true});
+        // double bang as could return undefined
+        const granted = !! statusRequest.granted;
+        permissionGranted.value = granted;
+        return granted;
         }
+      return false;
       }
-      // get permission from the system
-      const statusRequest: CheckPermissionResult = await BarcodeScanner.checkPermission({force: true});
-      return !!statusRequest.granted;
-
-
-    }
 
     onIonViewDidEnter(() => didUserGrantPermission()
         .then(bool => {
@@ -99,7 +113,7 @@ export default {
 
     const logoutAlert = () => presentLogoutAlertAndCallback(store, router, () => stopScan());
 
-    return {logoutAlert, scan}
+    return {logoutAlert, scanActive, permissionGranted, scan, presentOpenSettingsAlert}
   }
 }
 </script>
