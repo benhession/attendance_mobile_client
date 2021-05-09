@@ -35,13 +35,15 @@ import {
   onIonViewWillLeave
 } from '@ionic/vue';
 import {scan} from 'ionicons/icons';
-import {useStore} from "@/store";
+import {ACTIONS, useStore} from "@/store";
 import {useRouter} from "vue-router";
+import {presentMessageAlert} from '@/alerts/messageAlert'
 import {presentLogoutAlertAndCallback} from "@/alerts/logoutAlert";
 import {presentOpenSettingsAlert} from "@/alerts/qrPermissionAlerts";
 import {Plugins} from "@capacitor/core";
 import {CheckPermissionResult, SupportedFormat} from "@capacitor-community/barcode-scanner";
 import {ref} from "vue";
+import {ATTEND_STATUS} from "@/services/universityClassService";
 
 export default {
   name: 'QRTab',
@@ -56,26 +58,8 @@ export default {
     const scanActive = ref(false);
     const permissionGranted = ref(true);
 
-    function stopScan() {
-      const {BarcodeScanner} = Plugins;
-      scanActive.value = false;
-
-      BarcodeScanner.showBackground();
-      BarcodeScanner.stopScan();
-    }
-
-    async function startScan() {
-      const {BarcodeScanner} = Plugins;
-
-      await BarcodeScanner.hideBackground();
-      scanActive.value = true;
-      const result = await BarcodeScanner.startScan({targetedFormats: [SupportedFormat.QR_CODE]});
-
-      if (result.hasContent) {
-        console.log(result.content);
-        stopScan();
-      }
-    }
+    // helper functions
+    const messageAlert = (header: string, message: string) => presentMessageAlert(store, router, header, message);
 
     async function didUserGrantPermission(): Promise<boolean> {
       const {BarcodeScanner} = Plugins;
@@ -97,10 +81,75 @@ export default {
         const granted = !! statusRequest.granted;
         permissionGranted.value = granted;
         return granted;
-        }
-      return false;
       }
+      return false;
+    }
 
+    // scan functions
+    function stopScan() {
+      const {BarcodeScanner} = Plugins;
+      scanActive.value = false;
+
+      BarcodeScanner.showBackground();
+      BarcodeScanner.stopScan();
+    }
+
+    async function startScan() {
+      const {BarcodeScanner} = Plugins;
+
+      await BarcodeScanner.hideBackground();
+      scanActive.value = true;
+      const result = await BarcodeScanner.startScan({targetedFormats: [SupportedFormat.QR_CODE]});
+
+      if (result.hasContent) {
+        console.log(result.content);
+        store.dispatch(ACTIONS.ATTEND_CLASS, result.content).then(status => {
+          const theStatus: ATTEND_STATUS = status;
+
+          switch (theStatus) {
+            case ATTEND_STATUS.SUCCESS: {
+              // the class was set to attended and all classes have been updated on the device
+              messageAlert('Info', 'Successfully attended class.').then(() => router.push('ClassesTab'));
+              break;
+            }
+            case ATTEND_STATUS.ALREADY_ATTENDED: {
+              // the class was already marked as attended
+              messageAlert('Info', 'You are already shown as having attended this class.')
+                  .then(() => router.push('ClassesTab'));
+              break;
+            }
+            case ATTEND_STATUS.NOT_IN_PROGRESS: {
+              // the student is an attendee but the class is not currently in progress
+              messageAlert('Info',
+                  'Attendance is not currently been taken, please speak to your tutor at the end of class.')
+                  .then(() => router.push('ClassesTab'));
+              break;
+            }
+            case ATTEND_STATUS.NOT_VALID_CLASS: {
+              // the QR string doesn't match any class which the student is an attendee of
+              messageAlert('Info', 'The code does not match your enrolled classes')
+                  .then(() => router.push('ClassesTab'));
+              // TODO: Show the student info about the next class
+              break;
+            }
+            default: {
+              // theStatus is invalid
+              messageAlert('Info', 'Status Invalid').then(() => router.push('ClassesTab'));
+              break;
+            }
+          }
+
+          stopScan();
+
+        }).catch(e => {
+          messageAlert('Network Error', e);
+          stopScan();
+        });
+
+      }
+    }
+
+    // Ionic hooks
     onIonViewDidEnter(() => didUserGrantPermission()
         .then(bool => {
           if (bool) {
@@ -111,9 +160,10 @@ export default {
 
     onIonViewWillLeave(() => stopScan());
 
+    // UI functions
     const logoutAlert = () => presentLogoutAlertAndCallback(store, router, () => stopScan());
 
-    return {logoutAlert, scanActive, permissionGranted, scan, presentOpenSettingsAlert}
+    return {logoutAlert, scanActive, permissionGranted, scan, presentOpenSettingsAlert};
   }
 }
 </script>

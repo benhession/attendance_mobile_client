@@ -1,16 +1,12 @@
 import {InjectionKey} from 'vue';
 import {ActionContext, ActionTree, createStore, GetterTree, MutationTree, Store, useStore as baseUseStore} from 'vuex';
 import authService, {KeyCloakTokens} from "@/services/authService";
-import {UserDefaults} from "@/store/UserDefaults";
+import {USER_DEFAULTS, UserDefaults} from "@/store/UserDefaults";
 import {Keychain} from "@ionic-native/keychain";
 import {StudentUniversityClass, StudentUniversityClassInterface} from "@/model/StudentUniversityClass";
-import universityClassService from "@/services/universityClassService"
+import universityClassService, {ATTEND_STATUS} from "@/services/universityClassService"
 
 const userDefaults = UserDefaults.getInstance();
-
-const enum USER_DEFAULTS {
-    LOGGED_IN = 'LOGGED_IN'
-}
 
 const enum KEYCHAIN {
     REFRESH_TOKEN = 'REFRESH_TOKEN',
@@ -75,7 +71,8 @@ export const enum ACTIONS {
     LOG_OUT = 'LOG_OUT',
     FETCH_TOKENS_REFRESH_GRANT = 'FETCH_TOKENS_REFRESH_GRANT',
     FETCH_STUDENT_CLASSES = 'FETCH_STUDENT_CLASSES',
-    UPDATE_ACCESS_TOKEN = 'UPDATE_ACCESS_TOKEN'
+    UPDATE_ACCESS_TOKEN = 'UPDATE_ACCESS_TOKEN',
+    ATTEND_CLASS = 'ATTEND_CLASS'
 }
 
 // actions helper function
@@ -122,7 +119,7 @@ const actions: ActionTree<State, any> = {
                     Keychain.remove(KEYCHAIN.REFRESH_EXPIRY).then();
                     Keychain.remove(KEYCHAIN.REFRESH_TOKEN).then();
                     resolve();
-                }).catch((e) => reject(new Error("Unable to set 'Logged In' user default' " + e)));
+                }).catch((e) => reject(new Error("Unable to set 'Logged In' user default' ".concat(e))));
         })
     },
 
@@ -223,6 +220,46 @@ const actions: ActionTree<State, any> = {
             }).catch((e: Error) => reject(e));
         });
     },
+
+    [ACTIONS.ATTEND_CLASS](state, qrString): Promise<ATTEND_STATUS> {
+        return new Promise<ATTEND_STATUS>(((resolve, reject) => {
+
+            const accessToken = state.getters.getAccessToken;
+
+            universityClassService.attendClass(accessToken, qrString).then(response => {
+                if (response.status === 200) {
+
+                    const wasNotYetAttended: boolean = response.data;
+
+                    if (wasNotYetAttended) {
+                        state.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
+                           resolve(ATTEND_STATUS.SUCCESS);
+                        }).catch(error => reject('Success but unable to fetch classes: '.concat(error)));
+                    } else {
+                        resolve(ATTEND_STATUS.ALREADY_ATTENDED);
+                    }
+                }
+
+                else if (response.status === 204) {
+                    resolve(ATTEND_STATUS.NOT_VALID_CLASS);
+                }
+
+                else {
+                    reject('Unexpected status code: '.concat(String(response.status)))
+                }
+
+            }).catch(error => {
+
+                if (error.response.status === 412) {
+                    resolve(ATTEND_STATUS.NOT_IN_PROGRESS);
+                } else {
+                    reject('Unable to update attendance: '.concat(error));
+                }
+            })
+
+        }));
+    }
+
 }
 
 const getters: GetterTree<State, any> = {
@@ -257,9 +294,6 @@ const getters: GetterTree<State, any> = {
     },
     getAccessToken(): string {
         return state.accessToken;
-    },
-    getStudentClasses(): Array<StudentUniversityClass> {
-        return state.studentClasses;
     }
 
 }

@@ -1,5 +1,9 @@
 import { Storage } from "@ionic/storage";
 
+export const enum USER_DEFAULTS {
+    LOGGED_IN = 'LOGGED_IN'
+}
+
 export class UserDefaults {
     private static instance: UserDefaults;
     private store: Storage;
