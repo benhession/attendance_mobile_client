@@ -99,15 +99,30 @@ export default {
 
     const upcomingClasses = computed(() => {
       const currentClasses: StudentUniversityClass[] = classes.value;
+      // hack - moment() and new Date() both returned UTC that couldn't be converted by local(), moment(ISOString) worked
+      const currentTime = moment(new Date().toISOString()).local(true);
 
-      return currentClasses.filter((theClass) => theClass.datetime.add(theClass.duration) > moment())
-          .sort((a, b) => a.datetime <= b.datetime ? -1 : 1);
+      return currentClasses.filter((theClass) => {
+        const startTime = theClass.datetime;
+        const endTime = theClass.datetime.add(theClass.duration);
+        const isInProgress = currentTime > startTime && currentTime < endTime;
+
+        return (isInProgress && theClass.attended ) ? false : endTime > currentTime;
+      }).sort((a, b) => a.datetime <= b.datetime ? -1 : 1);
     });
+
     const previousClasses = computed(() => {
       const currentClasses: StudentUniversityClass[] = classes.value;
+      // hack - see above
+      const currentTime = moment(new Date().toISOString()).local(true);
 
-      return currentClasses.filter(theClass => theClass.datetime.add(theClass.duration) < moment())
-          .sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
+      return currentClasses.filter(theClass => {
+        const startTime = theClass.datetime;
+        const endTime = theClass.datetime.add(theClass.duration);
+        const isInProgress = currentTime > startTime && currentTime < endTime;
+
+        return (isInProgress && theClass.attended) || endTime < currentTime
+      }).sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
     });
 
     // functions

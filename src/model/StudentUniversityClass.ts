@@ -39,7 +39,7 @@ export class StudentUniversityClass {
         this._classId = classInterface.classId;
         this._name = classInterface.name;
         this._location = classInterface.location;
-        this._dateTime = classInterface.dateTime;
+        this._dateTime = classInterface.dateTime.concat("Z");
         this._duration = classInterface.duration;
         this._classType = classInterface.classType;
         this._module = classInterface.module;
@@ -61,11 +61,11 @@ export class StudentUniversityClass {
     }
 
     get datetimeUTC(): moment.Moment {
-        return moment(this._dateTime).utc();
+        return moment(this._dateTime);
     }
 
     get datetime(): moment.Moment {
-        return moment(this._dateTime);
+        return moment(this._dateTime).local(true);
     }
 
     get duration(): moment.Duration {
