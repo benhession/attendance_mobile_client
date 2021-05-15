@@ -1,7 +1,6 @@
 <template>
   <ion-page>
     <ion-header>
-
       <ion-toolbar>
         <ion-buttons slot="primary">
           <ion-button color="primary" @click="logoutAlert">Logout</ion-button>
@@ -18,16 +17,17 @@
         </ion-toolbar>
       </ion-header>
 
-
       <div v-if="segmentValue === 'upcoming'">
-        <UpcomingClassCard v-for="theClass in upcomingClasses" :key="theClass.classId" :the-class="theClass"/>
+        <ion-list>
+          <upcoming-class-item v-for="theClass in upcomingClasses" :key="theClass.classId" :the-class="theClass" />
+        </ion-list>
       </div>
       <div v-else>
-        <PreviousClassCard v-for="theClass in previousClasses" :key="theClass.classId" :the-class="theClass"/>
+        <previous-class-item v-for="theClass in previousClasses" :key="theClass.classId" :the-class="theClass" />
       </div>
 
-
     </ion-content>
+
     <ion-footer class="ion-no-border">
       <ion-toolbar>
         <IonSegment @ionChange="segmentChanged($event)" value="upcoming">
@@ -40,6 +40,7 @@
         </IonSegment>
       </ion-toolbar>
     </ion-footer>
+
   </ion-page>
 </template>
 
@@ -55,7 +56,8 @@ import {
   IonSegment,
   IonSegmentButton,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  IonList
 } from '@ionic/vue';
 import {ref, computed} from "vue"
 import {useStore} from "@/store";
@@ -64,14 +66,14 @@ import {presentLogoutAlert} from "@/alerts/logoutAlert";
 
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
 import moment from "moment";
-import UpcomingClassCard from "@/components/UpcomingClassCard.vue";
-import PreviousClassCard from "@/components/PreviousClassCard.vue";
+import UpcomingClassItem from "@/components/UpcomingClassItem.vue";
+import PreviousClassItem from "@/components/PreviousClassItem.vue";
 
 export default {
   name: 'ClassesTab',
   components: {
-    PreviousClassCard,
-    UpcomingClassCard,
+    PreviousClassItem,
+    UpcomingClassItem,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -82,7 +84,8 @@ export default {
     IonSegment,
     IonSegmentButton,
     IonLabel,
-    IonFooter
+    IonFooter,
+    IonList
   },
   setup() {
 
