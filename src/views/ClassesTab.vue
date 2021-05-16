@@ -130,11 +130,7 @@ export default {
       const currentTime = moment(new Date().toISOString()).local(true);
 
       return currentClasses.filter((theClass) => {
-        const startTime = theClass.datetime;
-        const endTime = theClass.datetime.add(theClass.duration);
-        const isInProgress = currentTime > startTime && currentTime < endTime;
-
-        return (isInProgress && theClass.attended ) ? false : endTime > currentTime;
+        return (theClass.isInProgress() && theClass.attended ) ? false : theClass.endTime > currentTime;
       }).sort((a, b) => a.datetime <= b.datetime ? -1 : 1);
     });
 
@@ -144,11 +140,7 @@ export default {
       const currentTime = moment(new Date().toISOString()).local(true);
 
       return currentClasses.filter(theClass => {
-        const startTime = theClass.datetime;
-        const endTime = theClass.datetime.add(theClass.duration);
-        const isInProgress = currentTime > startTime && currentTime < endTime;
-
-        return (isInProgress && theClass.attended) || endTime < currentTime
+        return (theClass.isInProgress() && theClass.attended) || theClass.endTime < currentTime
       }).sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
     });
 

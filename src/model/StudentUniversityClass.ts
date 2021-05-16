@@ -82,6 +82,10 @@ export class StudentUniversityClass {
         return moment.duration(this._duration);
     }
 
+    get endTime(): moment.Moment {
+        return this.datetime.add(this.duration);
+    }
+
     get classType(): string {
         return this._classType;
     }
