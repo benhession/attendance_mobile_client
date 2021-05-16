@@ -13,6 +13,11 @@
     <p><b>Time:</b> {{ theClass.datetime.format('h:mm a') }}</p>
     <p><b>Location:</b> {{ theClass.location }}</p>
     <p><b>Tutor:</b> {{ theClass.tutor.forename.concat(' ').concat(theClass.tutor.surname) }}</p>
+
+    <ion-chip v-if="theClass.isInProgress()">
+      <ion-label>In Progress</ion-label>
+    </ion-chip>
+
   </ion-content>
 </template>
 

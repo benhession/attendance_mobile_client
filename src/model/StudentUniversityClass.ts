@@ -47,6 +47,16 @@ export class StudentUniversityClass {
         this._attended = classInterface.attended;
     }
 
+    // Methods
+    isInProgress(): boolean {
+        const currentDateTime = moment(new Date().toISOString()).local(true);
+        const startDateTime = this.datetime
+        const endDateTime = this.datetime.add(this.duration);
+
+        return currentDateTime.isBetween(startDateTime, endDateTime)
+    }
+
+    // Getters
 
     get classId(): string {
         return this._classId;
@@ -87,4 +97,5 @@ export class StudentUniversityClass {
     get attended(): boolean {
         return this._attended;
     }
+
 }
