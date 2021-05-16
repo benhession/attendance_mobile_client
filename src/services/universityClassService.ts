@@ -20,7 +20,9 @@ export default {
             headers: {
                 Authorization: token,
                 Accept: "application/json"
-            }
+            },
+            timeout: 10000,
+            timeoutErrorMessage: 'Unable to get response from resource server'
         }
 
         return webServiceStudentClasses.get("/classes", config);
@@ -37,7 +39,9 @@ export default {
             },
             params: {
                 qrString: qrString
-            }
+            },
+            timeout: 10000,
+            timeoutErrorMessage: 'Unable to get response from resource server'
         }
 
         return webServiceStudentClasses.get("/attend", config);

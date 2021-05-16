@@ -1,4 +1,4 @@
-import axios, {AxiosResponse} from "axios";
+import axios, {AxiosRequestConfig, AxiosResponse} from "axios";
 
 const keycloakMobileClient = axios.create({
     baseURL: 'http://192.168.0.13:9090/auth/realms/master/protocol/openid-connect/token',
@@ -34,7 +34,12 @@ export default {
         params.append('username', username);
         params.append('password', password);
 
-        return keycloakMobileClient.post<KeyCloakTokens>("/", params);
+        const config: AxiosRequestConfig = {
+            timeout: 10000,
+            timeoutErrorMessage: 'Unable to get response from authorisation server'
+        }
+
+        return keycloakMobileClient.post<KeyCloakTokens>("/", params, config);
     },
     fetchTokensRefreshTokenGrant(refreshToken: string): Promise<AxiosResponse<KeyCloakTokens>> {
 
@@ -44,6 +49,11 @@ export default {
         params.append('client_secret', clientSecret);
         params.append('refresh_token', refreshToken);
 
-        return keycloakMobileClient.post<KeyCloakTokens>("/", params);
+        const config: AxiosRequestConfig = {
+            timeout: 10000,
+            timeoutErrorMessage: 'Unable to get response from authorisation server'
+        }
+
+        return keycloakMobileClient.post<KeyCloakTokens>("/", params, config);
     }
 }
