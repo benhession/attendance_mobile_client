@@ -101,7 +101,7 @@ const actions: ActionTree<State, any> = {
                     userDefaults.set(USER_DEFAULTS.LOGGED_IN, 'true')
                         .then(() => {
                             state.commit(MUTATIONS.SET_LOGGED_IN, true);
-                            state.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => resolve());
+                            state.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => resolve()).catch((e) => reject(e));
                         }).catch(e => reject(e));
                 })
                 .catch((e: Error) => reject(e))
