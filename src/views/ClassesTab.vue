@@ -22,13 +22,29 @@
         </ion-toolbar>
       </ion-header>
 
-      <div v-if="segmentValue === 'upcoming'">
-        <ion-list>
+      <div v-if="segmentValue === 'upcoming'" style="height: 100%">
+
+        <div v-if="upcomingClasses === undefined || upcomingClasses.length === 0" class="ion-padding">
+            <h4>There are no upcoming classes to display</h4>
+        </div>
+
+        <ion-list v-else>
           <upcoming-class-item v-for="theClass in upcomingClasses" :key="theClass.classId" :the-class="theClass" />
         </ion-list>
+
       </div>
+
       <div v-else>
-        <previous-class-item v-for="theClass in previousClasses" :key="theClass.classId" :the-class="theClass" />
+
+        <div v-if="previousClasses === undefined || previousClasses.length === 0" class="ion-padding">
+          <div>
+            <h4>There are no previous classes to display</h4>
+          </div>
+        </div>
+
+        <ion-list v-else>
+          <previous-class-item v-for="theClass in previousClasses" :key="theClass.classId" :the-class="theClass" />
+        </ion-list>
       </div>
 
     </ion-content>
@@ -98,8 +114,6 @@ export default {
   },
   setup() {
 
-    // TODO: display 'no classes' if arrays are empty
-
     //Constants
     const store = useStore();
     const router = useRouter();
@@ -151,8 +165,7 @@ export default {
       store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
         target.complete();
       })
-          .catch((e) => {
-            console.log(e);
+          .catch(() => {
             target.complete();
           });
     }
