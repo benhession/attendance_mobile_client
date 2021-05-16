@@ -11,6 +11,11 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
+
+      <ion-refresher slot="fixed" @ionRefresh="doRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
+
       <ion-header collapse="condense">
         <ion-toolbar>
           <ion-title size="large">Your classes</ion-title>
@@ -57,10 +62,12 @@ import {
   IonSegmentButton,
   IonTitle,
   IonToolbar,
-  IonList
+  IonList,
+  IonRefresher,
+  IonRefresherContent
 } from '@ionic/vue';
 import {ref, computed} from "vue"
-import {useStore} from "@/store";
+import {ACTIONS, useStore} from "@/store";
 import {useRouter} from "vue-router";
 import {presentLogoutAlert} from "@/alerts/logoutAlert";
 
@@ -85,14 +92,17 @@ export default {
     IonSegmentButton,
     IonLabel,
     IonFooter,
-    IonList
+    IonList,
+    IonRefresher,
+    IonRefresherContent
   },
   setup() {
+
+    // TODO: display 'no classes' if arrays are empty
 
     //Constants
     const store = useStore();
     const router = useRouter();
-
 
     //Reactive references
     const segmentValue = ref('upcoming');
@@ -135,7 +145,19 @@ export default {
       segmentValue.value = ev.detail.value;
     }
 
-    return {logoutAlert, segmentChanged, upcomingClasses, previousClasses, segmentValue}
+    function doRefresh(event: CustomEvent) {
+      const target = event.target as HTMLIonRefresherElement;
+
+      store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
+        target.complete();
+      })
+          .catch((e) => {
+            console.log(e);
+            target.complete();
+          });
+    }
+
+    return {logoutAlert, segmentChanged, upcomingClasses, previousClasses, segmentValue, doRefresh}
   }
 }
 </script>
