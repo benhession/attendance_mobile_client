@@ -142,7 +142,7 @@ const actions: ActionTree<State, any> = {
                             reject(new Error("unable to get tokens from password grant"))
                         }
                     }
-                }).catch((e: Error)=> reject(e));
+                }).catch((e: Error) => reject(e));
         });
     },
 
@@ -233,28 +233,30 @@ const actions: ActionTree<State, any> = {
 
                     if (wasNotYetAttended) {
                         state.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
-                           resolve(ATTEND_STATUS.SUCCESS);
+                            resolve(ATTEND_STATUS.SUCCESS);
                         }).catch(error => reject('Success but unable to fetch classes: '.concat(error)));
                     } else {
                         resolve(ATTEND_STATUS.ALREADY_ATTENDED);
                     }
-                }
-
-                else if (response.status === 204) {
+                } else if (response.status === 204) {
                     resolve(ATTEND_STATUS.NOT_VALID_CLASS);
-                }
-
-                else {
+                } else {
                     reject('Unexpected status code: '.concat(String(response.status)))
                 }
 
-            }).catch(error => {
+            }).catch((error) => {
 
-                if (error.response.status === 412) {
-                    resolve(ATTEND_STATUS.NOT_IN_PROGRESS);
-                } else {
-                    reject('Unable to update attendance: '.concat(error));
+                console.log(error)
+                if (error.message === 'Network Error') {
+                    reject('Unable to reach resource server');
                 }
+                else if (error.response.status === 412) {
+                    resolve(ATTEND_STATUS.NOT_IN_PROGRESS);
+                }
+                else {
+                    reject('Unable to update attendance: '.concat(error.message));
+                }
+
             })
 
         }));
