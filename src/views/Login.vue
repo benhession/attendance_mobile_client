@@ -12,6 +12,8 @@
         </ion-toolbar>
       </ion-header>
 
+      <ion-loading :is-open="loading" message="Please wait ..."></ion-loading>
+
       <div class="login-form-container">
         <div class="login-form">
           <ion-list>
@@ -44,7 +46,8 @@ import {
   IonList,
   IonPage,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  IonLoading
 } from "@ionic/vue";
 import {ref} from 'vue';
 
@@ -55,50 +58,63 @@ import {presentMessageAlert} from "@/alerts/messageAlert";
 export default {
   name: "Login",
   components: {
-    IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButton, IonItem, IonList, IonInput, IonLabel
+    IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButton, IonItem, IonList, IonInput, IonLabel, IonLoading
   },
   setup() {
 
+    // constants
     const router = useRouter()
     const store = useStore();
+    const messageAlert = (header: string, message: string) => presentMessageAlert(header, message);
 
-    const messageAlert = (header: string, message: string) => presentMessageAlert(store, router, header, message);
-
+    // reactive references
     const username = ref("");
     const password = ref("");
+    const loading = ref(false);
 
-    // if logged in fetch classes and push to classesTab.vue
-    const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn
-    loggedInPromise.then((loggedIn) => {
-      if (loggedIn) {
-        store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
-          router.push({name: 'ClassesTab'})
-        });
-
-      }
-    }).catch(reason => console.error(reason));
+    // functions
 
     // login and get auth tokens, handle errors gracefully
     function logIn() {
+      loading.value = true;
       store.dispatch(ACTIONS.LOG_IN, [username.value, password.value])
           .then(() => {
+            loading.value = false;
             router.push({name: 'ClassesTab'})
           })
           .catch((e) => {
+            loading.value = false;
             if (e instanceof Error) {
-              console.error(e);
-              if (e.message === 'Network Error') {
-                messageAlert('Network Error', 'Unable to connect to authorisation server');
-              } else if (e.message === 'Request failed with status code 401') {
+              if (e.message === 'Request failed with status code 401') {
                 messageAlert('Login failed', 'Please provide a valid username and password');
               } else {
-                messageAlert('Unknown error', 'see console for details');
+                messageAlert(e.name, e.message);
               }
             }
           });
     }
 
-    return {router, store, username, password, logIn};
+    // logic
+
+    // if logged in fetch classes and push to classesTab.vue
+    loading.value = true;
+    const loggedInPromise: Promise<boolean> = store.getters.getLoggedIn
+    loggedInPromise.then((loggedIn) => {
+      if (loggedIn) {
+        store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(() => {
+          loading.value = false;
+          router.push({name: 'ClassesTab'})
+        }).catch((e: Error) => {
+          loading.value = false;
+          store.dispatch(ACTIONS.LOG_OUT);
+          messageAlert("Error", "Unable to login: ".concat(e.message))
+        });
+      } else {
+        loading.value = false;
+      }
+    }).catch(reason => console.error(reason));
+
+    return {router, store, username, password, logIn, loading};
   }
 }
 
