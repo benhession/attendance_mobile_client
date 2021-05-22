@@ -45,7 +45,6 @@ import {CheckPermissionResult, SupportedFormat} from "@capacitor-community/barco
 import {computed, ref} from "vue";
 import {ATTEND_STATUS} from "@/services/universityClassService";
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
-import moment from "moment";
 
 export default {
   name: 'QRTab',
@@ -63,15 +62,9 @@ export default {
     //Computed properties
     const nextClass = computed(() => {
       const currentClasses: StudentUniversityClass[] = store.state.studentClasses;
-      // hack - moment() and new Date() both returned UTC that couldn't be converted by local(), moment(ISOString) worked
-      const currentTime = moment(new Date().toISOString()).local(true);
 
       const upcomingClasses = currentClasses.filter((theClass) => {
-        const startTime = theClass.datetime;
-        const endTime = theClass.datetime.add(theClass.duration);
-        const isInProgress = currentTime > startTime && currentTime < endTime;
-
-        return (isInProgress && theClass.attended) ? false : endTime > currentTime;
+        return theClass.isUpcomingClass();
       }).sort((a, b) => a.datetime <= b.datetime ? 1 : -1);
 
       return upcomingClasses.pop()
@@ -116,7 +109,6 @@ export default {
     function startScan() {
       const {BarcodeScanner} = Plugins;
 
-      // TODO: add loading spinner
       // try update classes first
       store.dispatch(ACTIONS.FETCH_STUDENT_CLASSES).then(async () => {
 

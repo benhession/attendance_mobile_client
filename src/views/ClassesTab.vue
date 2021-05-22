@@ -88,7 +88,6 @@ import {useRouter} from "vue-router";
 import {presentLogoutAlert} from "@/alerts/logoutAlert";
 
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
-import moment from "moment";
 import UpcomingClassItem from "@/components/UpcomingClassItem.vue";
 import PreviousClassItem from "@/components/PreviousClassItem.vue";
 
@@ -126,21 +125,17 @@ export default {
 
     const upcomingClasses = computed(() => {
       const currentClasses: StudentUniversityClass[] = classes.value;
-      // hack - moment() and new Date() both returned UTC that couldn't be converted by local(), moment(ISOString) worked
-      const currentTime = moment(new Date().toISOString()).local(true);
 
       return currentClasses.filter((theClass) => {
-        return (theClass.isInProgress() && theClass.attended ) ? false : theClass.endTime > currentTime;
+        return theClass.isUpcomingClass();
       }).sort((a, b) => a.datetime <= b.datetime ? -1 : 1);
     });
 
     const previousClasses = computed(() => {
       const currentClasses: StudentUniversityClass[] = classes.value;
-      // hack - see above
-      const currentTime = moment(new Date().toISOString()).local(true);
 
       return currentClasses.filter(theClass => {
-        return (theClass.isInProgress() && theClass.attended) || theClass.endTime < currentTime
+        return theClass.isPreviousClass();
       }).sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
     });
 
