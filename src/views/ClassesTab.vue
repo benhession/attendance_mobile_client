@@ -25,11 +25,11 @@
       <div v-if="segmentValue === 'upcoming'" style="height: 100%">
 
         <div v-if="upcomingClasses === undefined || upcomingClasses.length === 0" class="ion-padding">
-            <h4>There are no upcoming classes to display</h4>
+          <h4>There are no upcoming classes to display</h4>
         </div>
 
         <ion-list v-else>
-          <upcoming-class-item v-for="theClass in upcomingClasses" :key="theClass.classId" :the-class="theClass" />
+          <upcoming-class-item v-for="theClass in upcomingClasses" :key="theClass.classId" :the-class="theClass"/>
         </ion-list>
 
       </div>
@@ -43,14 +43,15 @@
         </div>
 
         <ion-list v-else>
-          <previous-class-item v-for="theClass in previousClasses" :key="theClass.classId" :the-class="theClass" />
+          <previous-class-item v-for="theClass in previousClasses" :key="theClass.classId" :the-class="theClass"/>
         </ion-list>
       </div>
 
     </ion-content>
 
     <ion-footer class="ion-no-border">
-      <ion-toolbar>
+
+      <div class="ion-padding-horizontal">
         <IonSegment @ionChange="segmentChanged($event)" value="upcoming">
           <IonSegmentButton value="previous" class="segment-btn">
             <IonLabel>Previous</IonLabel>
@@ -59,7 +60,15 @@
             <IonLabel>Upcoming</IonLabel>
           </IonSegmentButton>
         </IonSegment>
-      </ion-toolbar>
+      </div>
+
+      <div class="ion-padding" style="text-align: center">
+        <p v-if="attendancePercentage >= 80">You have achieved {{ attendancePercentage }}% attendance. Well done!</p>
+        <p v-else-if="attendancePercentage === 0">Your attendance percentage will be displayed here.</p>
+        <p v-else style="color: red">You have achieved {{ attendancePercentage }}% attendance.
+          Attendance below 80% can negatively affect your final grade.</p>
+      </div>
+
     </ion-footer>
 
   </ion-page>
@@ -73,16 +82,16 @@ import {
   IonFooter,
   IonHeader,
   IonLabel,
+  IonList,
   IonPage,
+  IonRefresher,
+  IonRefresherContent,
   IonSegment,
   IonSegmentButton,
   IonTitle,
-  IonToolbar,
-  IonList,
-  IonRefresher,
-  IonRefresherContent
+  IonToolbar
 } from '@ionic/vue';
-import {ref, computed} from "vue"
+import {computed, ref} from "vue"
 import {ACTIONS, useStore} from "@/store";
 import {useRouter} from "vue-router";
 import {presentLogoutAlert} from "@/alerts/logoutAlert";
@@ -121,7 +130,9 @@ export default {
     const segmentValue = ref('upcoming');
 
     //Computed properties
-    const classes = computed(() => {return store.state.studentClasses});
+    const classes = computed(() => {
+      return store.state.studentClasses
+    });
 
     const upcomingClasses = computed(() => {
       const currentClasses: StudentUniversityClass[] = classes.value;
@@ -137,6 +148,24 @@ export default {
       return currentClasses.filter(theClass => {
         return theClass.isPreviousClass();
       }).sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
+    });
+
+    const attendancePercentage = computed(() => {
+      let attendedClasses = 0;
+      const numberOfClasses = previousClasses.value.length;
+
+      if (numberOfClasses === 0) {
+        return 0;
+      }
+
+      previousClasses.value.forEach((theClass) => {
+        if (theClass.attended) {
+          attendedClasses += 1;
+        }
+      });
+
+      return Math.round((attendedClasses / numberOfClasses) * 100);
+
     });
 
     // functions
@@ -157,7 +186,7 @@ export default {
           });
     }
 
-    return {logoutAlert, segmentChanged, upcomingClasses, previousClasses, segmentValue, doRefresh}
+    return {logoutAlert, segmentChanged, upcomingClasses, previousClasses, segmentValue, doRefresh, attendancePercentage}
   }
 }
 </script>
