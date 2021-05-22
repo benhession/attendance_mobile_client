@@ -213,6 +213,9 @@ const actions: ActionTree<State, any> = {
                         state.commit(MUTATIONS.UPDATE_STUDENT_CLASSES, classObjectArray);
 
                         resolve();
+                    } else if (response.status === 204){
+                        state.commit(MUTATIONS.CLEAR_STUDENT_CLASSES);
+                        resolve();
                     } else {
                         reject(new Error("Unable to get classes from the resource server"))
                     }
