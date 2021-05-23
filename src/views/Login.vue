@@ -24,7 +24,7 @@
 
             <ion-item>
               <ion-label color="primary" position="floating">Password</ion-label>
-              <ion-input v-model="password" type="password"/>
+              <ion-input v-model="password" type="password" enterkeyhint="go" @keyup.enter="logIn()"/>
             </ion-item>
           </ion-list>
 
