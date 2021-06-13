@@ -11,6 +11,7 @@
     <p><b>Module:</b> {{ theClass.module.moduleCode.concat(': ').concat(theClass.module.moduleName) }}</p>
     <p><b>Date:</b> {{ theClass.datetime.format('MMMM Do YYYY') }}</p>
     <p><b>Time:</b> {{ theClass.datetime.format('h:mm a') }}</p>
+    <p><b>Class Type:</b> {{ theClass.classType }}</p>
     <p><b>Location:</b> {{ theClass.location }}</p>
     <p><b>Tutor:</b> {{ theClass.tutor.forename.concat(' ').concat(theClass.tutor.surname) }}</p>
 
