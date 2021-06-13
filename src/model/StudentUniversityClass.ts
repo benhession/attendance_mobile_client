@@ -49,24 +49,21 @@ export class StudentUniversityClass {
 
     // Methods
     isInProgress(): boolean {
-        // hack - moment() and new Date() both returned UTC that couldn't be converted by local(), moment(ISOString) worked
-        const currentDateTime = moment(new Date().toISOString()).local(true);
-        const startDateTime = this.datetime
-        const endDateTime = this.datetime.add(this.duration);
+        const currentDateTime = moment()
+        const startDateTime = this.datetimeUTC
+        const endDateTime = this.endTime
 
         return currentDateTime.isBetween(startDateTime, endDateTime)
     }
 
     isUpcomingClass(): boolean {
-        // hack - see above
-        const currentDateTime = moment(new Date().toISOString()).local(true);
+        const currentDateTime = moment();
 
         return (this.isInProgress() && this.attended ) ? false : this.endTime > currentDateTime;
     }
 
     isPreviousClass(): boolean {
-        // hack - see above
-        const currentDateTime = moment(new Date().toISOString()).local(true);
+        const currentDateTime = moment();
 
         return (this.isInProgress() && this.attended) || this.endTime < currentDateTime
 
@@ -91,7 +88,7 @@ export class StudentUniversityClass {
     }
 
     get datetime(): moment.Moment {
-        return moment(this._dateTime).local(true);
+        return moment(this._dateTime).local();
     }
 
     get duration(): moment.Duration {
@@ -99,7 +96,7 @@ export class StudentUniversityClass {
     }
 
     get endTime(): moment.Moment {
-        return this.datetime.add(this.duration);
+        return this.datetimeUTC.add(this.duration);
     }
 
     get classType(): string {
