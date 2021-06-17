@@ -27,7 +27,17 @@
 
 <script lang="ts">
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
-import {IonHeader, IonToolbar, IonTitle, IonContent, modalController} from '@ionic/vue'
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  modalController,
+  IonChip,
+  IonLabel,
+  IonButtons,
+  IonButton
+} from '@ionic/vue'
 import {defineComponent} from "vue";
 
 export default defineComponent({
@@ -42,6 +52,9 @@ export default defineComponent({
     }
 
     return {IonHeader, IonToolbar, IonTitle, IonContent, close}
+  },
+  components: {
+    IonHeader, IonToolbar, IonTitle, IonContent, IonChip, IonLabel, IonButtons, IonButton
   }
 });
 </script>

@@ -37,7 +37,8 @@ export default {
       return modal.present();
     }
 
-    return { IonItem, IonLabel, IonChip, openPreviousModal }
-  }
+    return { openPreviousModal }
+  },
+  components: {IonItem, IonLabel, IonChip }
 }
 </script>
