@@ -1,42 +1,52 @@
 import {mount} from '@vue/test-utils'
 import UpcomingClassItem from '@/components/UpcomingClassItem.vue'
+import MockObjects from "./MockObjects";
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
-import moment from "moment";
+import {IonChip} from "@ionic/vue";
+
+// Shared Mock Objects
+const inProgressClass: StudentUniversityClass = MockObjects.inProgressClass;
 
 describe('UpcomingClassItem.vue', () => {
   it('loads', () => {
-    let currentDateTime: string = moment().subtract(5, "minutes").toISOString();
-    currentDateTime = currentDateTime.replace('Z', '');
-    const inProgressClass = new StudentUniversityClass({
-      classId: 'TM4702101',
-      name: 'Introduction to TM470',
-      location: 'Berrill Lecture Theatre',
-      dateTime: currentDateTime,
-      duration: 'PT1H',
-      classType: 'Lecture',
-      module: {
-        moduleCode: "TM470",
-        moduleYear: "2021",
-        moduleName: "The computing and IT project"
-      },
-      tutor: {
-        tutorId: 'dylanb2441',
-        forename: 'Bob',
-        surname: 'Dylan',
-      },
-      attended: true
-
-    })
-
-    console.log(inProgressClass.isInProgress());
-    console.log(currentDateTime)
-    console.log(inProgressClass.datetime.format("DD-MM-YYYY hh:mm a"))
 
     const wrapper = mount(UpcomingClassItem, {
       props: {
-        theClass: inProgressClass,
+        theClass: inProgressClass
       }
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
-})
+    });
+
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it('displays the name of the class', () => {
+    const wrapper = mount(UpcomingClassItem, {
+      props: {
+        theClass: inProgressClass
+      }
+    });
+
+    expect(wrapper.html().includes(inProgressClass.name)).toBe(true);
+  });
+
+  it("has in-progress chip if current time is between start and finish times", () => {
+    const wrapper = mount(UpcomingClassItem, {
+      props: {
+        theClass: inProgressClass
+      }
+    });
+    const chip = wrapper.findComponent(IonChip);
+    expect(chip.exists()).toBe(true);
+  });
+
+  it("doesn't have in-progress chip if start time is in the future", () => {
+    const wrapper = mount(UpcomingClassItem, {
+      props: {
+        theClass: MockObjects.upcomingClass
+      }
+    });
+    const chip = wrapper.findComponent(IonChip);
+    expect(chip.exists()).toBe(false);
+  });
+
+});
