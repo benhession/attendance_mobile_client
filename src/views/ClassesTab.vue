@@ -61,13 +61,8 @@
           </IonSegmentButton>
         </IonSegment>
       </div>
-
-      <div class="ion-padding" style="text-align: center">
-        <p v-if="attendancePercentage >= 80">You have achieved {{ attendancePercentage }}% attendance. Well done!</p>
-        <p v-else-if="attendancePercentage === 0">Your attendance percentage will be displayed here.</p>
-        <p v-else style="color: red">You have achieved {{ attendancePercentage }}% attendance.
-          Attendance below 80% can negatively affect your final grade.</p>
-      </div>
+      
+      <AttendanceSummary :previous-classes="previousClasses"/>
 
     </ion-footer>
 
@@ -99,10 +94,12 @@ import {presentLogoutAlert} from "@/alerts/logoutAlert";
 import {StudentUniversityClass} from "@/model/StudentUniversityClass";
 import UpcomingClassItem from "@/components/UpcomingClassItem.vue";
 import PreviousClassItem from "@/components/PreviousClassItem.vue";
+import AttendanceSummary from "@/components/AttendanceSummary.vue";
 
 export default {
   name: 'ClassesTab',
   components: {
+    AttendanceSummary,
     PreviousClassItem,
     UpcomingClassItem,
     IonHeader,
@@ -150,24 +147,6 @@ export default {
       }).sort((a, b) => a.datetime >= b.datetime ? -1 : 1);
     });
 
-    const attendancePercentage = computed(() => {
-      let attendedClasses = 0;
-      const numberOfClasses = previousClasses.value.length;
-
-      if (numberOfClasses === 0) {
-        return 0;
-      }
-
-      previousClasses.value.forEach((theClass) => {
-        if (theClass.attended) {
-          attendedClasses += 1;
-        }
-      });
-
-      return Math.round((attendedClasses / numberOfClasses) * 100);
-
-    });
-
     // functions
     const logoutAlert = () => presentLogoutAlert(store, router);
 
@@ -186,7 +165,7 @@ export default {
           });
     }
 
-    return {logoutAlert, segmentChanged, upcomingClasses, previousClasses, segmentValue, doRefresh, attendancePercentage}
+    return {logoutAlert, segmentChanged, upcomingClasses, previousClasses, segmentValue, doRefresh}
   }
 }
 </script>
