@@ -63,5 +63,26 @@ describe('AttendanceSummary.vue', () => {
         });
         const p = wrapper.find('p');
         expect(p.text()).toEqual('Your attendance percentage will be displayed here.');
-    })
+    });
+
+    it('displays correctly when attendance is exactly 80%', () => {
+        const wrapper = mount(AttendanceSummary, {
+            props: {
+                previousClasses: MockObjects.eightyPercentAttendance
+            }
+        });
+        const p = wrapper.find('p');
+        expect(p.text()).toEqual('You have achieved 80% attendance. Well done!')
+    });
+
+    it('displays correctly when attendance is 79%', () => {
+        const wrapper = mount(AttendanceSummary, {
+            props: {
+                previousClasses: MockObjects.seventyNinePercentAttendance
+            }
+        });
+        const p = wrapper.find('p');
+        expect(p.text()).toEqual('You have achieved 79% attendance. ' +
+            'Attendance below 80% can negatively affect your final grade.')
+    });
 })

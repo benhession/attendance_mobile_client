@@ -12,6 +12,56 @@ const twoWeeksAgo: string = moment().subtract(2, "weeks").toISOString()
 const threeDaysAgo: string = moment().subtract(3, "days").toISOString()
     .replace('Z', '');
 
+function amountAttendedUsingOneHundredClasses(percentage: number): StudentUniversityClass[] {
+    const classes = new Array<StudentUniversityClass>();
+
+    for(let i = 0; i < percentage; i++) {
+        classes.push(new StudentUniversityClass({
+            classId: '',
+            name: '',
+            location: '',
+            dateTime: oneWeekAgo,
+            duration: '',
+            classType: '',
+            module: {
+                moduleCode: "",
+                moduleYear: "",
+                moduleName: ""
+            },
+            tutor: {
+                tutorId: '',
+                forename: '',
+                surname: '',
+            },
+            attended: true
+        }));
+    }
+
+    for(let i = 0; i < 100 - percentage; i++) {
+        classes.push(new StudentUniversityClass({
+            classId: '',
+            name: '',
+            location: '',
+            dateTime: oneWeekAgo,
+            duration: '',
+            classType: '',
+            module: {
+                moduleCode: "",
+                moduleYear: "",
+                moduleName: ""
+            },
+            tutor: {
+                tutorId: '',
+                forename: '',
+                surname: '',
+            },
+            attended: false
+        }));
+    }
+
+    return classes;
+}
+
 export default {
     inProgressClass: new StudentUniversityClass({
         classId: 'TM4702101',
@@ -109,4 +159,6 @@ export default {
         },
         attended: false
     }),
+    seventyNinePercentAttendance: amountAttendedUsingOneHundredClasses(79),
+    eightyPercentAttendance: amountAttendedUsingOneHundredClasses(80)
 }
