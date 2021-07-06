@@ -37,13 +37,10 @@ export default {
                 Authorization: token,
                 Accept: "application/json"
             },
-            params: {
-                qrString: qrString
-            },
             timeout: 10000,
             timeoutErrorMessage: 'Unable to get response from resource server'
         }
 
-        return webServiceStudentClasses.get("/attend", config);
+        return webServiceStudentClasses.post("/attend", {qrString: qrString}, config);
     }
 }

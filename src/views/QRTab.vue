@@ -169,6 +169,9 @@ export default {
             stopScan();
           });
 
+        } else {
+          messageAlert('Error', "No content from resource server")
+              .then(() => router.push('ClassesTab'));
         }
       }).catch((e: Error) => messageAlert('Error', e.message)
           .then(() => router.push('ClassesTab')));

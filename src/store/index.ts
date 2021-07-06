@@ -4,7 +4,7 @@ import authService, {KeyCloakTokens} from "@/services/authService";
 import {USER_DEFAULTS, UserDefaults} from "@/store/UserDefaults";
 import {Keychain} from "@ionic-native/keychain";
 import {StudentUniversityClass, StudentUniversityClassInterface} from "@/model/StudentUniversityClass";
-import universityClassService, {ATTEND_STATUS} from "@/services/universityClassService"
+import universityClassService, {ATTEND_STATUS} from "@/services/universityClassService";
 
 const userDefaults = UserDefaults.getInstance();
 
@@ -249,7 +249,6 @@ const actions: ActionTree<State, any> = {
 
             }).catch((error) => {
 
-                console.log(error)
                 if (error.message === 'Network Error') {
                     reject('Unable to reach resource server');
                 }
