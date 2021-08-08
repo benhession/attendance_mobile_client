@@ -41,6 +41,6 @@ export default {
             timeoutErrorMessage: 'Unable to get response from resource server'
         }
 
-        return webServiceStudentClasses.post("/attend", {qrString: qrString}, config);
+        return webServiceStudentClasses.patch("/attend", {qrString: qrString}, config);
     }
 }
