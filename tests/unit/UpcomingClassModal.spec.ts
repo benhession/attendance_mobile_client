@@ -41,7 +41,7 @@ describe('UpcomingClassModal.vue', () => {
                theClass: upcomingClass
            }
        });
-       expect(wrapper.html().includes('<p><b>Class Type:</b> Lecture</p>'))
+       expect(wrapper.html().includes('<p><b>Class Type:</b> Lecture</p>')).toBe(true);
    })
 
     it("has in-progress chip if current time is between start and finish time of class", () => {

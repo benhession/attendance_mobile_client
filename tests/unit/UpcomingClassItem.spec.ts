@@ -29,6 +29,18 @@ describe('UpcomingClassItem.vue', () => {
     expect(wrapper.html().includes(inProgressClass.name)).toBe(true);
   });
 
+  it('displays the correct time and date', () => {
+    const wrapper = mount(UpcomingClassItem, {
+      props: {
+        theClass: inProgressClass
+      }
+    });
+
+    const formattedDateTime = inProgressClass.datetime.format('MMMM Do YYYY, h:mm a');
+
+    expect(wrapper.html().includes(formattedDateTime)).toBe(true);
+  });
+
   it("has in-progress chip if current time is between start and finish times", () => {
     const wrapper = mount(UpcomingClassItem, {
       props: {

@@ -5,7 +5,7 @@ import {IonChip, IonLabel} from "@ionic/vue";
 
 const attendedClass1 = MockObjects.attendedClass1;
 
-describe('Upcoming class item.vue', () => {
+describe('UpcomingClassItem.vue', () => {
     it('loads', () => {
         const wrapper = mount(PreviousClassItem, {
             props: {
@@ -25,6 +25,18 @@ describe('Upcoming class item.vue', () => {
 
         expect(wrapper.html().includes(attendedClass1.name)).toBe(true);
     });
+
+    it('displays the correct time and date', () => {
+        const wrapper = mount(PreviousClassItem, {
+            props: {
+                theClass: attendedClass1
+            }
+        });
+
+        const formattedDateTime = attendedClass1.datetime.format('MMMM Do YYYY, h:mm a');
+
+        expect(wrapper.html().includes(formattedDateTime)).toBe(true);
+    })
 
     it('marks attended classes appropriately', () => {
         const wrapper = mount(PreviousClassItem, {
