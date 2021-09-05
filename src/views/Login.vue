@@ -122,7 +122,7 @@ export default {
 
 <style scoped>
 .login-form-container {
-  height: 60%;
+  height: 40%;
   width: 100%;
   padding-right: 5px;
   display: flex;
